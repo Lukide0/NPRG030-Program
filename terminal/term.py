@@ -1,6 +1,7 @@
 import os
 import terminal.colors as colors
 
+
 class Term:
     def __init__(self):
 
@@ -19,8 +20,7 @@ class Term:
         # (width, height)
         self.__window_size: tuple[int, int] = (0, 0)
 
-        self.__colors: list[int] = [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
-        self.__colors_prev: list[int] = [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
+        self.__colors: list[list[int]] = []
 
         self.__buffer_size: int = 0
 
@@ -47,13 +47,17 @@ class Term:
         self.__clean_screen_buffer = [" "] * self.__buffer_size
         self.__front_screen_buffer = self.__clean_screen_buffer[:]
         self.__back_screen_buffer = self.__clean_screen_buffer[:]
+        self.__colors = [
+            [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
+            for _ in range(self.__buffer_size)
+        ]
 
     def __index_from(self, x: int, y: int) -> int:
-        return (y * self.__window_size[1]) + x
+        return (y * self.__window_size[0]) + x
 
     # returns (y, x)
-    def __get_xy_from_index(self, i: int) -> tuple[int, int]:
-        return divmod(i, self.__window_size[1])
+    def __get_yx_from_index(self, i: int) -> tuple[int, int]:
+        return divmod(i, self.__window_size[0])
 
     def __del__(self):
         print(f"\033[{colors.STYLE_RESET}m")
@@ -65,10 +69,14 @@ class Term:
         """
         self.__command_buffer.append(f"\033]0;{title}\007")
 
-    def clear_buffer(self):
+    def clear_buffers(self):
         """
-        Clears the front screen buffer
+        Clears the front screen buffer and the colors buffer
         """
+        self.__colors = [
+            [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
+            for _ in range(self.__buffer_size)
+        ]
         self.__front_screen_buffer = self.__clean_screen_buffer[:]
 
     def set_screen_buffer(self, buff: list[str]):
@@ -77,100 +85,84 @@ class Term:
         """
         self.__front_screen_buffer = buff
 
+    def get_screen_buffer(self) -> list[str]:
+        """
+        Returns the front screen buffer
+        """
+        return self.__front_screen_buffer
+
     def get_window_size(self) -> tuple[int, int]:
         """
         Returns the window size from the setup
         """
         return self.__window_size
 
-    def set_writting_style(
-        self, color_fg: int = colors.COLOR_FG_DEFAULT, color_bg: int = colors.COLOR_BG_DEFAULT
+    def write_char_at(
+        self,
+        x: int,
+        y: int,
+        char: str,
+        colors: list[int] = [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT],
     ):
-        """
-        Sets the background and foreground colors
-        """
-        self.__colors[0] = color_fg
-        self.__colors[1] = color_bg
-
-    def write_char_at(self, x: int, y: int, char: str):
         """
         Writes the single character into front buffer
         """
-        if self.__colors[0] != self.__colors_prev[0]:
-            if self.__colors[1] != self.__colors_prev[1]:
-
-                self.__front_screen_buffer[
-                    self.__index_from(x, y)
-                ] = f"\033[{self.__colors[0]};{self.__colors[1]}m{char}"
-
-                self.__colors_prev[0] = self.__colors[0]
-                self.__colors_prev[1] = self.__colors[1]
-            else:
-                self.__front_screen_buffer[
-                    self.__index_from(x, y)
-                ] = f"\033[{self.__colors[0]}m{char}"
-                self.__colors_prev[0] = self.__colors[0]
-
-        elif self.__colors[1] != self.__colors_prev[1]:
-
-            self.__front_screen_buffer[
-                self.__index_from(x, y)
-            ] = f"\033[{self.__colors[1]}m{char}"
-            self.__colors_prev[1] = self.__colors[1]
+        index = self.__index_from(x, y)
+        if self.__colors[index][0] != colors[0] or self.__colors[index][1] != colors[1]:
+            self.__front_screen_buffer[index] = f"\033[{colors[0]};{colors[1]}m{char}"
+            self.__colors[index] = colors
         else:
-            self.__front_screen_buffer[self.__index_from(x, y)] = char
+            self.__front_screen_buffer[index] = char
 
-    def write_str_at(self, x: int, y: int, string: str):
+    def write_str_at(
+        self,
+        x: int,
+        y: int,
+        string: str,
+        colors: list[int] = [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT],
+    ):
         """
         Writes the entire string into front buffer
         """
+        index = self.__index_from(x, y)
 
-        if self.__colors[0] != self.__colors_prev[0]:
-            if self.__colors[1] != self.__colors_prev[1]:
-
-                self.__front_screen_buffer[
-                    self.__index_from(x, y)
-                ] = f"\033[{self.__colors[0]};{self.__colors[1]}m{string[0]}"
-
-                self.__colors_prev[0] = self.__colors[0]
-                self.__colors_prev[1] = self.__colors[1]
-            else:
-                self.__front_screen_buffer[
-                    self.__index_from(x, y)
-                ] = f"\033[{self.__colors[0]}m{string[0]}"
-                self.__colors_prev[0] = self.__colors[0]
-
-        elif self.__colors[1] != self.__colors_prev[1]:
-
-            self.__front_screen_buffer[
-                self.__index_from(x, y)
-            ] = f"\033[{self.__colors[1]}m{string[0]}"
-            self.__colors_prev[1] = self.__colors[1]
+        if self.__colors[index][0] != colors[0] or self.__colors[index][0] != colors[1]:
+            self.__front_screen_buffer[index] = f"\033[{colors[0]};{colors[1]}m{string[0]}"
+            self.__colors[index] = colors
         else:
-            self.__front_screen_buffer[self.__index_from(x, y)] = string[0]
+            self.__front_screen_buffer[index] = string[0]
 
+        index += 1
         for char in string[1:]:
-            self.__front_screen_buffer[self.__index_from(x + 1, y)] = char
-            x += 1
-
-    def print_screen(self, flush_output: bool = False):
+            self.__front_screen_buffer[index] = char
+            # HACK: force to update
+            self.__back_screen_buffer[index] = ""
+            self.__colors[index] = colors
+            index += 1
+    
+    def print_screen(self):
         """
         Only prints the front buffer
         """
-        tmp_commands: list[str] = ["\0337"]
+        tmp_commands: list[str] = ["\0337", "\033[H"]
+        prev_index : int = 0
 
         for i in range(self.__buffer_size):
+            # different content
             if self.__back_screen_buffer[i] != self.__front_screen_buffer[i]:
-                y, x = self.__get_xy_from_index(i)
-                tmp_commands.append(
-                    f"\033[{y + 1};{x + 1}f{self.__front_screen_buffer[i]}"
-                )
+                if i - 1 == prev_index:
+                    tmp_commands.append(self.__front_screen_buffer[i])
+                else:
+                    y, x = self.__get_yx_from_index(i)
+                    tmp_commands.append(
+                        f"\033[{y + 1};{x + 1}f{self.__front_screen_buffer[i]}"
+                    )
+                prev_index = i
 
         self.__back_screen_buffer = self.__front_screen_buffer[:]
-        self.__colors_prev = [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
 
         tmp_commands.append("\0338")
-        print("".join(tmp_commands), end="", flush=flush_output)
+        print("".join(tmp_commands), end="")
 
     # ------------------------------ Commands ------------------------------ #
     def erase_screen_from_cursor(self):
