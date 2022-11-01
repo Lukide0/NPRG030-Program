@@ -47,17 +47,14 @@ class Game2048:
     def run(self):
         self.__running = True
         self.__listener.start()
-        """
-        BUG: spatne vykresleni po pridani dalsiho. Useknuta leva cast bloku
-        """
+        self.__context.print_screen()
+
 
         while self.__running:
             if not self.__spawn_cell():
                 self.__running = False
             self.__render()
-            sleep(0.2)
-            self.__merge(random.choice([self.LEFT, self.RIGHT, self.DOWN, self.UP]))
-            # self.__tick()
+            self.__tick()
 
         self.__listener.stop()
         self.__context.clear_styles()
