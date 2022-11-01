@@ -19,8 +19,6 @@ class Term:
         # (width, height)
         self.__window_size: tuple[int, int] = (0, 0)
 
-        self.__colors: list[list[int]] = []
-
         self.__buffer_size: int = 0
 
     def setup(self, width: int, height: int, title: str = ""):
@@ -46,10 +44,6 @@ class Term:
         self.__clean_screen_buffer = [" "] * self.__buffer_size
         self.__front_screen_buffer = self.__clean_screen_buffer[:]
         self.__back_screen_buffer = self.__clean_screen_buffer[:]
-        self.__colors = [
-            [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
-            for _ in range(self.__buffer_size)
-        ]
 
     def __index_from(self, x: int, y: int) -> int:
         return (y * self.__window_size[0]) + x
@@ -62,7 +56,7 @@ class Term:
         self.clear_styles()
 
     def clear_styles(self):
-        print(f"\033[{colors.STYLE_RESET}m", flush=True)
+        print(f"\033[{colors.STYLE_RESET}m\033[?25h", flush=True)
 
     # ------------------------------ Screen ------------------------------ #
     def set_title(self, title: str):
@@ -73,12 +67,8 @@ class Term:
 
     def clear_buffers(self):
         """
-        Clears the front screen buffer and the colors buffer
+        Clears the front screen buffer
         """
-        self.__colors = [
-            [colors.COLOR_FG_DEFAULT, colors.COLOR_BG_DEFAULT]
-            for _ in range(self.__buffer_size)
-        ]
         self.__front_screen_buffer = self.__clean_screen_buffer[:]
 
     def set_screen_buffer(self, buff: list[str]):
@@ -111,12 +101,8 @@ class Term:
         """
         index = self.__index_from(x, y)
 
-        # back buffer
-        if self.__colors[index][0] != color[0] or self.__colors[index][1] != color[1]:
-           self.__front_screen_buffer[index] = f"\033[{color[0]};{color[1]}m{char}"
-           self.__colors[index] = color
-        else:
-           self.__front_screen_buffer[index] = char
+        self.__front_screen_buffer[index] = f"\033[{color[0]};{color[1]}m{char}"
+        self.__back_screen_buffer[index] = ""
 
     def write_str_at(
         self,
@@ -130,23 +116,15 @@ class Term:
         """
         index = self.__index_from(x, y)
 
-        if self.__colors[index][0] != color[0] or self.__colors[index][1] != color[1]:
-            self.__front_screen_buffer[index] = f"\033[{color[0]};{color[1]}m{string[0]}"
-            self.__colors[index] = color
+        self.__front_screen_buffer[index] = f"\033[{color[0]};{color[1]}m{string[0]}"
+        self.__back_screen_buffer[index] = ""
+            
+        index += 1
+        for char in string[1:]:
+            self.__front_screen_buffer[index] = char
+            self.__back_screen_buffer[index] = ""
+            
             index += 1
-            for char in string[1:]:
-                self.__front_screen_buffer[index] = char
-                # HACK: force to update
-                self.__back_screen_buffer[index] = ""
-                self.__colors[index] = color
-                index += 1
-        else:
-            for char in string:
-                self.__front_screen_buffer[index] = char
-                index += 1
-
-        if index < self.__buffer_size and (self.__colors[index][0] != color[0] or self.__colors[index][1] != color[1]):
-            self.__front_screen_buffer[index - 1] = f"{self.__front_screen_buffer[index - 1]}\033[{colors.STYLE_RESET}m"
     
     def print_screen(self):
         """
