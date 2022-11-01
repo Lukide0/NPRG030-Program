@@ -5,5 +5,7 @@ from terminal.term import Term
 
 
 if __name__ == "__main__":
-    game = games.Game2048()
+    term = Term()
+    game = games.GameTetris(term)
     game.run()
+    input()

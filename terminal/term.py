@@ -201,9 +201,14 @@ class Term:
         self.__command_buffer.clear()
 
     # ------------------------------ Commands: Cursor ------------------------------ #
+    def cursor_hide(self):
+        self.__command_buffer.append("\033[?25l")
+    
+    def cursor_show(self):
+        self.__command_buffer.append("\033[?25h")
 
     def cursor_move_home(self):
-        self.__command_buffer.append(f"\033[H")
+        self.__command_buffer.append("\033[H")
 
     def cursor_move(self, x: int, y: int):
         self.__command_buffer.append(f"\033[{y};{x}f")

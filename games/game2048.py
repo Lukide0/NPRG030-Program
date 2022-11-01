@@ -1,13 +1,12 @@
 import queue
 import random
-from time import sleep
 import terminal.colors as color
 import terminal
 import pynput.keyboard as keyboard
 
 
 class Game2048:
-    SIZE = 15
+    SIZE = 4
 
     LEFT = 0
     RIGHT = 1
@@ -15,9 +14,12 @@ class Game2048:
     DOWN = 3
     EXIT = 4
 
-    def __init__(self):
-        self.__context = terminal.Term()
+    def __init__(self, term : terminal.Term):
+        self.__context = term
         self.__context.setup((self.SIZE - 1) * 7 + 8, (self.SIZE * 4) + 1, "2048")
+        
+        self.__context.cursor_hide()
+        self.__context.execute_commands()
 
         self.__window_size = self.__context.get_window_size()
 
