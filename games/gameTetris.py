@@ -32,6 +32,7 @@ class GameTetris:
         [[1, 1, 1, 1]],
         [[1, 0, 0], [1, 1, 1]],
         [[0, 0, 1], [1, 1, 1]],
+        [[0,1,1], [1,1,0], [1,1,0]]
     ]
 
     NONE = 0
@@ -157,11 +158,13 @@ class GameTetris:
                     self.__grid[y + pos_y][x + pos_x][0] = 1
                     self.__grid[y + pos_y][x + pos_x][1] = self.__current_color
 
+            remove = True
             for x in range(self.WIDTH):
                 if self.__grid[y + pos_y][x][0] == 0:
+                    remove = False
                     break
             
-            if x + 1 == self.WIDTH:
+            if remove:
                 remove_indexes.append(y + pos_y)
 
         if not remove_indexes:
