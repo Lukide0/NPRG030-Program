@@ -135,6 +135,9 @@ class GameTetris:
                 if not self.__move(self.MOVE_DOWN):
                     self.__place_block()
                     self.__spawn_block()
+                    if self.__check_overlapping(self.__current_piece, self.__current_piece_pos):
+                        self.__running = False
+                        break
 
             self.__print_block()
 
