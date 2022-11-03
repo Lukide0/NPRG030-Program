@@ -8,9 +8,12 @@ from pynput import keyboard
 
 
 class GameTetris:
-    WIDTH = 10
-    HEIGHT = 24
+    WIDTH = 20
+    HEIGHT = 50
     FALLING_SPEED = 0.2
+    MAX_PIECE_LEN = 4
+    MARGIN = 2
+
     PIECES = [
         # T
         [
@@ -32,7 +35,6 @@ class GameTetris:
         [[1, 1, 1, 1]],
         [[1, 0, 0], [1, 1, 1]],
         [[0, 0, 1], [1, 1, 1]],
-        [[0,1,1], [1,1,0], [1,1,0]]
     ]
 
     NONE = 0
@@ -45,14 +47,21 @@ class GameTetris:
     def __init__(self, term: terminal.Term):
 
         self.__context = term
-        self.__context.setup(self.WIDTH * 2 + 18, self.HEIGHT + 2, "Tetris")
+        self.__context.setup(
+            self.WIDTH * 2 + 2 + self.MARGIN + 2 + (self.MAX_PIECE_LEN + 2) * 2,
+            self.HEIGHT + 2,
+            "Tetris",
+        )
 
         self.__context.cursor_hide()
         self.__context.execute_commands()
 
         self.__current_color: int = None
-
         self.__current_piece = []
+
+        self.__next_color = self.__random_color()
+        self.__next_piece = random.choice(self.PIECES)
+
         self.__current_piece_pos: list[int] = [0, 0]
 
         self.__grid: list[list[int]] = [
@@ -78,13 +87,26 @@ class GameTetris:
         self.__context.write_str_at(0, self.HEIGHT + 1, "┗" + "━" * width + "┛")
 
         # next piece border
-        offset = width + 4
+        offset = width + 2 + self.MARGIN
+        line_width = (self.MAX_PIECE_LEN + 2) * 2
 
-        self.__context.write_str_at(offset, 0, "┏━━┫" + "Next" + "┣━━┓")
+        self.__next_piece_offset = offset
+
+        self.__context.write_str_at(
+            offset,
+            0,
+            "┏"
+            + "━" * ((line_width - 6) // 2)
+            + "┫"
+            + "Next"
+            + "┣"
+            + "━" * ((line_width - 6) // 2)
+            + "┓",
+        )
         for y in range(0, 5):
-            self.__context.write_str_at(offset, y + 1, "┃" + " " * (5 * 2) + "┃")
+            self.__context.write_str_at(offset, y + 1, "┃" + " " * line_width + "┃")
 
-        self.__context.write_str_at(offset, 6, "┗" + "━" * (5 * 2) + "┛")
+        self.__context.write_str_at(offset, 6, "┗" + "━" * line_width + "┛")
 
     def __handle_keyboard_release(self, code):
 
@@ -107,6 +129,8 @@ class GameTetris:
 
         # 1.st block
         self.__spawn_block()
+        self.__create_next_piece()
+
         self.__print_block()
 
         self.__listener.start()
@@ -137,13 +161,49 @@ class GameTetris:
                 if not self.__move(self.MOVE_DOWN):
                     self.__place_block()
                     self.__spawn_block()
-                    if self.__check_overlapping(self.__current_piece, self.__current_piece_pos):
+                    self.__create_next_piece()
+                    if self.__check_overlapping(
+                        self.__current_piece, self.__current_piece_pos
+                    ):
                         self.__running = False
                         break
 
             self.__print_block()
 
         self.__listener.stop()
+
+    def __create_next_piece(self):
+        # clear previous
+        height = len(self.__next_piece)
+        width = len(self.__next_piece[0])
+
+        offset_x = self.MAX_PIECE_LEN - width
+
+        for y in range(height):
+            for x in range(width):
+                if self.__next_piece[y][x] == 1:
+                    self.__context.write_str_at(
+                        self.__next_piece_offset + 3 + x * 2 + offset_x, y + 3, "  "
+                    )
+
+        self.__next_piece = random.choice(self.PIECES)
+        self.__next_color = self.__random_color()
+
+        height = len(self.__next_piece)
+        width = len(self.__next_piece[0])
+
+        offset_x = self.MAX_PIECE_LEN - width
+        for y in range(height):
+            for x in range(width):
+                if self.__next_piece[y][x] == 1:
+                    self.__context.write_str_at(
+                        self.__next_piece_offset + 3 + x * 2 + offset_x,
+                        y + 3,
+                        "██",
+                        [self.__next_color, colors.COLOR_BG_DEFAULT],
+                    )
+
+        self.__context.print_screen()
 
     def __place_block(self):
         pos_x = self.__current_piece_pos[0]
@@ -163,7 +223,7 @@ class GameTetris:
                 if self.__grid[y + pos_y][x][0] == 0:
                     remove = False
                     break
-            
+
             if remove:
                 remove_indexes.append(y + pos_y)
 
@@ -173,18 +233,18 @@ class GameTetris:
         for index in remove_indexes:
             self.__grid.pop(index)
             self.__grid.insert(0, [[0, None] for i in range(self.WIDTH)])
-        
+
         for y in range(self.HEIGHT):
             for x in range(self.WIDTH):
                 if self.__grid[y][x][0] != 0:
-                    self.__write_cell(x,y, self.__grid[y][x][1])
+                    self.__write_cell(x, y, self.__grid[y][x][1])
                 else:
-                    self.__clear_cell(x,y)
+                    self.__clear_cell(x, y)
 
     def __spawn_block(self):
-        self.__current_piece = random.choice(self.PIECES)
+        self.__current_piece = self.__next_piece
         self.__current_piece_pos = [self.WIDTH // 2, 0]
-        self.__current_color = self.__random_color()
+        self.__current_color = self.__next_color
 
     def __random_color(self):
         color = random.choice(colors.ALL_FG_COLORS)
@@ -196,7 +256,7 @@ class GameTetris:
     def __clear_cell(self, x: int, y: int):
         self.__context.write_str_at(x * 2 + 1, y + 1, "  ")
 
-    def __write_cell(self, x: int, y: int, color : int):
+    def __write_cell(self, x: int, y: int, color: int):
         self.__context.write_str_at(
             x * 2 + 1, y + 1, "██", [color, colors.COLOR_BG_DEFAULT]
         )
@@ -206,7 +266,9 @@ class GameTetris:
             for x in range(len(self.__current_piece[y])):
                 if self.__current_piece[y][x] != 0:
                     self.__write_cell(
-                        x + self.__current_piece_pos[0], y + self.__current_piece_pos[1], self.__current_color
+                        x + self.__current_piece_pos[0],
+                        y + self.__current_piece_pos[1],
+                        self.__current_color,
                     )
         self.__context.print_screen()
 
