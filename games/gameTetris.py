@@ -8,14 +8,15 @@ from pynput import keyboard
 
 
 class GameTetris:
-    WIDTH = 20
-    HEIGHT = 50
-    FALLING_SPEED = 0.2
+    WIDTH = 15
+    HEIGHT = 30
+    MAX_FALLING_SPEED = 0.05
+    START_FALLING_SPEED = 0.4
     MAX_PIECE_LEN = 4
+    SIDEBAR_WIDTH = 16
     MARGIN = 2
 
     PIECES = [
-        # T
         [
             [0, 1, 0],
             [1, 1, 1],
@@ -48,7 +49,7 @@ class GameTetris:
 
         self.__context = term
         self.__context.setup(
-            self.WIDTH * 2 + 2 + self.MARGIN + 2 + (self.MAX_PIECE_LEN + 2) * 2,
+            self.WIDTH * 2 + 2 + self.MARGIN + 2 + self.SIDEBAR_WIDTH,
             self.HEIGHT + 2,
             "Tetris",
         )
@@ -58,6 +59,8 @@ class GameTetris:
 
         self.__current_color: int = None
         self.__current_piece = []
+
+        self.__falling_speed = self.START_FALLING_SPEED
 
         self.__next_color = self.__random_color()
         self.__next_piece = random.choice(self.PIECES)
@@ -69,6 +72,22 @@ class GameTetris:
         ]
         self.__running = False
 
+
+    def __handle_keyboard_release(self, code):
+
+        if code == keyboard.Key.left:
+            self.__keys.put(self.MOVE_LEFT)
+        elif code == keyboard.Key.right:
+            self.__keys.put(self.MOVE_RIGHT)
+        elif code == keyboard.Key.up:
+            self.__keys.put(self.ROTATE)
+        elif code == keyboard.Key.down:
+            self.__keys.put(self.MOVE_DOWN)
+        elif code == keyboard.Key.esc:
+            self.__keys.put(self.EXIT)
+            self.__running = False
+
+    def __prepare(self):
         self.__listener = keyboard.Listener(on_press=self.__handle_keyboard_release)
         self.__keys = SimpleQueue()
 
@@ -88,7 +107,7 @@ class GameTetris:
 
         # next piece border
         offset = width + 2 + self.MARGIN
-        line_width = (self.MAX_PIECE_LEN + 2) * 2
+        line_width = self.SIDEBAR_WIDTH
 
         self.__next_piece_offset = offset
 
@@ -103,27 +122,27 @@ class GameTetris:
             + "━" * ((line_width - 6) // 2)
             + "┓",
         )
-        for y in range(0, 5):
+        for y in range(0, 4):
             self.__context.write_str_at(offset, y + 1, "┃" + " " * line_width + "┃")
 
-        self.__context.write_str_at(offset, 6, "┗" + "━" * line_width + "┛")
+        self.__context.write_str_at(offset, 5, "┗" + "━" * line_width + "┛")
 
-    def __handle_keyboard_release(self, code):
+        scope_start_y = self.MARGIN // 2 + 5
+        # score 
+        self.__score : int = 0
+        self.__score_pos = [offset + 9, scope_start_y + 1]
+        self.__lines : int = 0
+        self.__level : int = 0
 
-        if code == keyboard.Key.left:
-            self.__keys.put(self.MOVE_LEFT)
-        elif code == keyboard.Key.right:
-            self.__keys.put(self.MOVE_RIGHT)
-        elif code == keyboard.Key.up:
-            self.__keys.put(self.ROTATE)
-        elif code == keyboard.Key.down:
-            self.__keys.put(self.MOVE_DOWN)
-        elif code == keyboard.Key.esc:
-            self.__keys.put(self.EXIT)
-            self.__running = False
+        self.__context.write_str_at(offset, scope_start_y, "┏" + "━" * line_width + "┓")
+        self.__context.write_str_at(offset, scope_start_y + 1, f"┃ Score: {self.__score:07d} ┃")
+        self.__context.write_str_at(offset, scope_start_y + 2, f"┃ Lines: {self.__lines:07d} ┃")
+        self.__context.write_str_at(offset, scope_start_y + 3, f"┃ Level: {self.__level:07d} ┃")
+        self.__context.write_str_at(offset, scope_start_y + 4, "┗" + "━" * line_width + "┛")
 
     def run(self):
         # print borders
+        self.__prepare()
         self.__context.print_screen()
         self.__running = True
 
@@ -154,7 +173,7 @@ class GameTetris:
             except:
                 pass
 
-            if delta > self.FALLING_SPEED:
+            if delta > self.__falling_speed:
                 start = time()
                 delta = 0
 
@@ -171,19 +190,20 @@ class GameTetris:
             self.__print_block()
 
         self.__listener.stop()
+        self.__context.clear_styles()
 
     def __create_next_piece(self):
         # clear previous
         height = len(self.__next_piece)
         width = len(self.__next_piece[0])
 
-        offset_x = self.MAX_PIECE_LEN - width
+        offset_x = (self.SIDEBAR_WIDTH - 3) // 2 - width
 
         for y in range(height):
             for x in range(width):
                 if self.__next_piece[y][x] == 1:
                     self.__context.write_str_at(
-                        self.__next_piece_offset + 3 + x * 2 + offset_x, y + 3, "  "
+                        self.__next_piece_offset + 3 + x * 2 + offset_x, y + 2, "  "
                     )
 
         self.__next_piece = random.choice(self.PIECES)
@@ -192,13 +212,13 @@ class GameTetris:
         height = len(self.__next_piece)
         width = len(self.__next_piece[0])
 
-        offset_x = self.MAX_PIECE_LEN - width
+        offset_x = (self.SIDEBAR_WIDTH - 3) // 2 - width
         for y in range(height):
             for x in range(width):
                 if self.__next_piece[y][x] == 1:
                     self.__context.write_str_at(
                         self.__next_piece_offset + 3 + x * 2 + offset_x,
-                        y + 3,
+                        y + 2,
                         "██",
                         [self.__next_color, colors.COLOR_BG_DEFAULT],
                     )
@@ -229,6 +249,26 @@ class GameTetris:
 
         if not remove_indexes:
             return
+
+        removed_lines_count = len(remove_indexes)
+        
+        self.__lines += removed_lines_count
+        self.__level = self.__lines // 10
+        self.__falling_speed = max(self.START_FALLING_SPEED - self.__level * 0.05, self.MAX_FALLING_SPEED)
+
+        if removed_lines_count == 1:
+            self.__score += removed_lines_count * 40 * (self.__level + 1)
+        elif removed_lines_count == 2:
+            self.__score += removed_lines_count * 100 * (self.__level + 1)
+        elif removed_lines_count == 3:
+            self.__score += removed_lines_count * 300 * (self.__level + 1)
+        else:
+            self.__score += removed_lines_count * 1200 * (self.__level + 1)
+
+        x, y = self.__score_pos
+        self.__context.write_str_at(x, y, f"{self.__score:07d}")
+        self.__context.write_str_at(x, y + 1, f"{self.__lines:07d}")
+        self.__context.write_str_at(x, y + 2, f"{self.__level:07d}")
 
         for index in remove_indexes:
             self.__grid.pop(index)
@@ -279,7 +319,6 @@ class GameTetris:
                     self.__clear_cell(
                         x + self.__current_piece_pos[0], y + self.__current_piece_pos[1]
                     )
-        self.__context.print_screen()
 
     def __rotate(self):
         # rotate list
