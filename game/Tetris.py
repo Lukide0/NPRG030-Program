@@ -1,6 +1,7 @@
 import random
 import terminal
 import sys
+import os
 
 from queue import SimpleQueue
 from time import time
@@ -73,6 +74,12 @@ class GameTetris:
         ]
         self._running = False
 
+        if os.name != 'nt':
+            import curses
+
+            curses.initscr()
+            curses.noecho()
+
     def _handle_keyboard_release(self, code):
 
         if code == keyboard.Key.left:
@@ -88,7 +95,7 @@ class GameTetris:
             self._running = False
 
     def _prepare(self):
-        self._listener = keyboard.Listener(on_press=self._handle_keyboard_release, susspend=True)
+        self._listener = keyboard.Listener(on_press=self._handle_keyboard_release)
         self._keys = SimpleQueue()
 
         # board border
@@ -104,6 +111,7 @@ class GameTetris:
             self._context.write_str_at(0, y + 1, "┃" + " " * width + "┃")
 
         self._context.write_str_at(0, self.HEIGHT + 1, "┗" + "━" * width + "┛")
+        self._context.print_screen()
 
         # next piece border
         offset = width + 2 + self.MARGIN
@@ -140,10 +148,11 @@ class GameTetris:
         self._context.write_str_at(offset, scope_start_y + 3, f"┃ Level: {self._level:07d} ┃")
         self._context.write_str_at(offset, scope_start_y + 4, "┗" + "━" * line_width + "┛")
 
+        self._context.print_screen()
+
     def run(self):
         # print borders
         self._prepare()
-        self._context.print_screen()
         self._running = True
 
         # 1.st block
