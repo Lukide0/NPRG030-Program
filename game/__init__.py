@@ -1,0 +1,1 @@
+from .Tetris import GameTetris
