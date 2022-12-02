@@ -128,12 +128,12 @@ class GameTetris:
             + "Next"
             + "┣"
             + "━" * ((line_width - 6) // 2)
-            + "┓",
+            + "┓\n",
         )
         for y in range(0, 4):
-            self._context.write_str_at(offset, y + 1, "┃" + " " * line_width + "┃")
+            self._context.write_str_at(offset, y + 1, "┃" + " " * line_width + "┃\n")
 
-        self._context.write_str_at(offset, 5, "┗" + "━" * line_width + "┛")
+        self._context.write_str_at(offset, 5, "┗" + "━" * line_width + "┛\n")
 
         scope_start_y = self.MARGIN // 2 + 5
         # score 
@@ -142,11 +142,11 @@ class GameTetris:
         self._lines : int = 0
         self._level : int = 0
 
-        self._context.write_str_at(offset, scope_start_y, "┏" + "━" * line_width + "┓")
-        self._context.write_str_at(offset, scope_start_y + 1, f"┃ Score: {self._score:07d} ┃")
-        self._context.write_str_at(offset, scope_start_y + 2, f"┃ Lines: {self._lines:07d} ┃")
-        self._context.write_str_at(offset, scope_start_y + 3, f"┃ Level: {self._level:07d} ┃")
-        self._context.write_str_at(offset, scope_start_y + 4, "┗" + "━" * line_width + "┛")
+        self._context.write_str_at(offset, scope_start_y, "┏" + "━" * line_width + "┓\n")
+        self._context.write_str_at(offset, scope_start_y + 1, f"┃ Score: {self._score:07d} ┃\n")
+        self._context.write_str_at(offset, scope_start_y + 2, f"┃ Lines: {self._lines:07d} ┃\n")
+        self._context.write_str_at(offset, scope_start_y + 3, f"┃ Level: {self._level:07d} ┃\n")
+        self._context.write_str_at(offset, scope_start_y + 4, "┗" + "━" * line_width + "┛\n")
 
         self._context.print_screen()
 
