@@ -35,9 +35,17 @@ class GameTetris:
             [1, 1],
             [1, 1],
         ],
-        [[1, 1, 1, 1]],
-        [[1, 0, 0], [1, 1, 1]],
-        [[0, 0, 1], [1, 1, 1]],
+        [
+            [1, 1, 1, 1],
+        ],
+        [
+            [1, 0, 0],
+            [1, 1, 1],
+        ],
+        [
+            [0, 0, 1],
+            [1, 1, 1],
+        ],
     ]
 
     NONE = 0
@@ -74,7 +82,7 @@ class GameTetris:
         ]
         self._running = False
 
-        if os.name != 'nt':
+        if os.name != "nt":
             import curses
 
             curses.initscr()
@@ -136,17 +144,27 @@ class GameTetris:
         self._context.write_str_at(offset, 5, "┗" + "━" * line_width + "┛\n")
 
         scope_start_y = self.MARGIN // 2 + 5
-        # score 
-        self._score : int = 0
+        # score
+        self._score: int = 0
         self._score_pos = [offset + 9, scope_start_y + 1]
-        self._lines : int = 0
-        self._level : int = 0
+        self._lines: int = 0
+        self._level: int = 0
 
-        self._context.write_str_at(offset, scope_start_y, "┏" + "━" * line_width + "┓\n")
-        self._context.write_str_at(offset, scope_start_y + 1, f"┃ Score: {self._score:07d} ┃\n")
-        self._context.write_str_at(offset, scope_start_y + 2, f"┃ Lines: {self._lines:07d} ┃\n")
-        self._context.write_str_at(offset, scope_start_y + 3, f"┃ Level: {self._level:07d} ┃\n")
-        self._context.write_str_at(offset, scope_start_y + 4, "┗" + "━" * line_width + "┛\n")
+        self._context.write_str_at(
+            offset, scope_start_y, "┏" + "━" * line_width + "┓\n"
+        )
+        self._context.write_str_at(
+            offset, scope_start_y + 1, f"┃ Score: {self._score:07d} ┃\n"
+        )
+        self._context.write_str_at(
+            offset, scope_start_y + 2, f"┃ Lines: {self._lines:07d} ┃\n"
+        )
+        self._context.write_str_at(
+            offset, scope_start_y + 3, f"┃ Level: {self._level:07d} ┃\n"
+        )
+        self._context.write_str_at(
+            offset, scope_start_y + 4, "┗" + "━" * line_width + "┛\n"
+        )
 
         self._context.print_screen()
 
@@ -260,10 +278,12 @@ class GameTetris:
             return
 
         removed_lines_count = len(remove_indexes)
-        
+
         self._lines += removed_lines_count
         self._level = self._lines // 10
-        self._falling_speed = max(self.START_FALLING_SPEED - self._level * 0.05, self.MAX_FALLING_SPEED)
+        self._falling_speed = max(
+            self.START_FALLING_SPEED - self._level * 0.05, self.MAX_FALLING_SPEED
+        )
 
         if removed_lines_count == 1:
             self._score += removed_lines_count * 40 * (self._level + 1)
