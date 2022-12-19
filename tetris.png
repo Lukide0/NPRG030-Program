@@ -1,0 +1,50 @@
+= Tetris
+
+image:tetris.png[]
+
+== Dependencies
+
+* pynput
+
+== How to play
+
+=== Windows
+
+`python main.py`
+
+=== Linux
+
+`python3 main.py`
+
+== Controls
+
+* move
+** left <-
+** right ->
+** down ↓
+** rotate block ↑
+* quit
+** ESC
+
+== Levels
+
+* each 10 burnt lines speed and level will be increased
+
+== Points
+
+|===
+| Line clear | Points
+
+| 1
+| 40 * level
+
+| 2
+| 100 * level
+
+| 3
+| 300 * level
+
+| 4+
+| 1200 * level
+
+|===
