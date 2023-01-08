@@ -2,6 +2,8 @@
 
 image:tetris.png[]
 
+xref:dev_docs.adoc[Dokumentace pro vývojáře]
+
 == Dependencies
 
 * pynput

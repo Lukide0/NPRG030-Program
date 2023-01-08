@@ -1,0 +1,52 @@
+= Dokumentace pro vývojáře
+
+Tato dokumentace je určena především pro vývojáře, kteří by chtěli přispět
+do tohoto projektu.
+
+== Struktura projektu
+
+* `main.py` - vstupní bod aplikace
+* `game`
+** `__init__.py`
+** `Tetris.py`
+* `terminal` - obsahuje logiku pro práci s terminálem
+** `__init__.py`
+** `colors.py` - kódy barev
+** `term.py` - třída Term
+
+== Jak funguje vykreslování?
+
+Pro vykreslování slouží třída `Term`, která využívá
+https://cs.wikipedia.org/wiki/ANSI_escape_k%C3%B3d[ANSI escape kódy].
+Terminál se používá jako obrazovka, kde každý znak je jeden pixel.
+K urychlení vypisování kódů se používají 2 buffery(front a back).
+Back buffer má v sobě uloženo, jak vypadala obrazovka před vykreslení.
+Do front bufferu se zapisují změny, které se provedly po vykreslení.
+Při vykreslování se do back bufferu zkopíruje front buffer.
+
+V třídě `Term` je rozděleno vykreslování a provádění příkazů(pohyb kurzoru,
+nastavení názvu okna, dočasné mazaní, ...).
+Pokud bychom chtěli provést příkazy, tak musíme zavolat metodu
+`execute_commands`, jinak pokud chceme vykreslit obrazovku, tak se tato
+metoda nazývá `print_screen`.
+
+== Hra tetris
+
+O logiku hry se stará třída `GameTetris`, která využívá k vykreslování třídu
+`Term`.
+Pro práci s klávesnicí se používá knihovna
+https://pynput.readthedocs.io/en/latest/[pynput]
+
+Tato třída obsahuje několik konstant:
+
+* `WIDTH`, `HEIGHT` 
+** šířka a výška hrací desky
+* `START_FALLING_SPEED`, `MAX_FALLING_SPEED`
+** kolik sekund trvá padajcí kostce, aby se pohnula dolů
+* `SIDEBAR_WIDTH`
+** šířka postranního panelu
+* `MARGIN`
+** kolik pixelů je mezi hrací deskou a postranním panelem
+* `PIECES`
+** pole se všemi kostkami
+
