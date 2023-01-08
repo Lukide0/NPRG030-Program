@@ -204,7 +204,7 @@ class GameTetris:
             except:
                 pass
 
-            self._cast_shadow()
+            can_cast_shadow = self._cast_shadow()
 
             if delta > self._falling_speed:
                 start = time()
@@ -223,13 +223,13 @@ class GameTetris:
                         break
 
             self._print_block(self._current_piece_pos)
-            if self._shadow_pos_y != self._current_piece_pos[1]:
+            if self._shadow_pos_y != self._current_piece_pos[1] and can_cast_shadow:
                 self._clear_block([self._current_piece_pos[0], self._shadow_pos_y])
 
         self._listener.stop()
         self._context.clear_styles()
 
-    def _cast_shadow(self):
+    def _cast_shadow(self) -> bool:
 
         used_indexes: set[int] = set()
         min_depth = self.HEIGHT - 1
@@ -256,6 +256,9 @@ class GameTetris:
         if min_depth - self._current_piece_height >= self._current_piece_pos[1]:
             self._shadow_pos_y = min_depth
             self._print_block([pos_x, min_depth], "▓▓")
+            return True
+        else:
+            return False
 
     def _create_next_piece(self):
         # clear previous
