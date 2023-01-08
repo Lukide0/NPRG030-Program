@@ -42,7 +42,7 @@ Tato třída obsahuje několik konstant:
 * `WIDTH`, `HEIGHT` 
 ** šířka a výška hrací desky
 * `START_FALLING_SPEED`, `MAX_FALLING_SPEED`
-** kolik sekund trvá padajcí kostce, aby se pohnula dolů
+** kolik sekund trvá padající kostce, aby se pohnula dolů
 * `SIDEBAR_WIDTH`
 ** šířka postranního panelu
 * `MARGIN`
