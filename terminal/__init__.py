@@ -1,2 +1,2 @@
-from .term import *
+from .Term import *
 from .colors import *

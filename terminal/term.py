@@ -1,6 +1,7 @@
 import os
 import terminal.colors as colors
 
+
 class Term:
     def __init__(self):
 
@@ -118,20 +119,20 @@ class Term:
 
         self._front_screen_buffer[index] = f"\033[{color[0]};{color[1]}m{string[0]}"
         self._back_screen_buffer[index] = ""
-            
+
         index += 1
         for char in string[1:]:
             self._front_screen_buffer[index] = char
             self._back_screen_buffer[index] = ""
-            
+
             index += 1
-    
+
     def print_screen(self):
         """
         Only prints the front buffer
         """
         tmp_commands: list[str] = ["\0337", "\033[H"]
-        prev_index : int = 0
+        prev_index: int = 0
 
         for i in range(self._buffer_size):
             # different content
@@ -203,7 +204,7 @@ class Term:
     # ------------------------------ Commands: Cursor ------------------------------ #
     def cursor_hide(self):
         self._command_buffer.append("\033[?25l")
-    
+
     def cursor_show(self):
         self._command_buffer.append("\033[?25h")
 
