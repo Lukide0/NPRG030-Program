@@ -14,7 +14,6 @@ class GameTetris:
     HEIGHT = 30
     MAX_FALLING_SPEED = 0.05
     START_FALLING_SPEED = 0.4
-    MAX_PIECE_LEN = 4
     SIDEBAR_WIDTH = 16
     MARGIN = 2
 
