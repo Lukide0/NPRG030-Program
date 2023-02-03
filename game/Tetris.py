@@ -47,6 +47,7 @@ class GameTetris:
         ],
     ]
 
+    # Game events
     NONE = 0
     MOVE_LEFT = 1
     MOVE_RIGHT = 2
@@ -69,6 +70,7 @@ class GameTetris:
         if os.name != "nt":
             import curses
 
+            # don't display cursor keys e.g. left arrow = ^[[D
             curses.initscr()
             curses.noecho()
 
@@ -87,6 +89,9 @@ class GameTetris:
             self._running = False
 
     def _prepare_board(self):
+        """
+        Draw layout of the game
+        """
 
         self._current_color: int = None
         self._current_piece = []
@@ -102,6 +107,7 @@ class GameTetris:
         self._current_piece_height: int = 0
         self._current_piece_width: int = 0
 
+        # prepare grid
         self._grid: list[list[int]] = [
             [[0, None] for x in range(self.WIDTH)] for y in range(self.HEIGHT)
         ]
@@ -125,7 +131,7 @@ class GameTetris:
         self._context.write_str_at(0, self.HEIGHT + 1, "┗" + "━" * width + "┛")
         self._context.print_screen()
 
-        # next piece border
+        # border for UI with the next tetris block
         offset = width + 2 + self.MARGIN
         line_width = self.SIDEBAR_WIDTH
 
@@ -173,6 +179,10 @@ class GameTetris:
         self._context.print_screen()
 
     def run(self):
+        """
+        Run the game
+        """
+
         # print borders
         self._prepare_board()
         self._running = True
@@ -206,7 +216,9 @@ class GameTetris:
 
             can_cast_shadow = self._cast_shadow()
 
+            # drop block by 1 downwards after self._falling_speed seconds.
             if delta > self._falling_speed:
+                # reset delta time
                 start = time()
                 delta = 0
 
@@ -216,6 +228,7 @@ class GameTetris:
                     self._create_next_piece()
                     self._shadow_pos_y = 0
 
+                    # check whether the next piece has enough space to be drawn
                     if self._check_overlapping(
                         self._current_piece, self._current_piece_pos
                     ):
@@ -223,6 +236,8 @@ class GameTetris:
                         break
 
             self._print_block(self._current_piece_pos)
+
+            # check if the shadow of the current block is not overlapping with the actual block
             if self._shadow_pos_y != self._current_piece_pos[1] and can_cast_shadow:
                 self._clear_block([self._current_piece_pos[0], self._shadow_pos_y])
 
@@ -230,6 +245,10 @@ class GameTetris:
         self._context.clear_styles()
 
     def _cast_shadow(self) -> bool:
+        """
+        Try to cast the shadow. 
+        Returns wheather the shadow can be drawn
+        """
 
         used_indexes: set[int] = set()
         min_depth = self.HEIGHT - 1
@@ -261,12 +280,12 @@ class GameTetris:
             return False
 
     def _create_next_piece(self):
-        # clear previous
         height = len(self._next_piece)
         width = len(self._next_piece[0])
 
         offset_x = (self.SIDEBAR_WIDTH - 3) // 2 - width
 
+        # clear previous block
         for y in range(height):
             for x in range(width):
                 if self._next_piece[y][x] == 1:
@@ -294,6 +313,9 @@ class GameTetris:
         self._context.print_screen()
 
     def _place_block(self):
+        """
+        Place the current block and update the scoreboard.
+        """
         pos_x = self._current_piece_pos[0]
         pos_y = self._current_piece_pos[1]
 
@@ -316,8 +338,9 @@ class GameTetris:
         if not remove_indexes:
             return
 
+        # update the scoreboard
         removed_lines_count = len(remove_indexes)
-
+        
         self._lines += removed_lines_count
         self._level = self._lines // 10
         self._falling_speed = max(
@@ -338,6 +361,7 @@ class GameTetris:
         self._context.write_str_at(x, y + 1, f"{self._lines:07d}")
         self._context.write_str_at(x, y + 2, f"{self._level:07d}")
 
+        # clear removed lines
         for index in remove_indexes:
             self._grid.pop(index)
             self._grid.insert(0, [[0, None] for i in range(self.WIDTH)])
@@ -357,7 +381,11 @@ class GameTetris:
         self._current_piece_width = len(self._current_piece[0])
         self._current_piece_height = len(self._current_piece)
 
-    def _random_color(self):
+    def _random_color(self) -> int:
+        """
+        Choice random foreground color
+        """
+
         color = random.choice(colors.ALL_FG_COLORS)
         if color == colors.COLOR_FG_BLACK or color == colors.COLOR_FG_DEFAULT:
             return colors.COLOR_FG_BLACK_BRIGHT
@@ -373,6 +401,9 @@ class GameTetris:
         )
 
     def _print_block(self, pos: list[int], char: str = "██"):
+        """
+        Draw the current block on the specific position.
+        """
         for y in range(len(self._current_piece)):
             for x in range(len(self._current_piece[y])):
                 if self._current_piece[y][x] != 0:
@@ -380,12 +411,20 @@ class GameTetris:
         self._context.print_screen()
 
     def _clear_block(self, pos: list[int]):
+        """
+        Clear the current block on the specific position.
+        """
+
         for y in range(len(self._current_piece)):
             for x in range(len(self._current_piece[y])):
                 if self._current_piece[y][x] != 0:
                     self._clear_cell(x + pos[0], y + pos[1])
 
     def _rotate(self):
+        """
+        Rotate the current piece clockwise.
+        """
+
         # rotate list
         rotated = list(map(list, zip(*self._current_piece[::-1])))
 
@@ -396,6 +435,10 @@ class GameTetris:
             self._current_piece_width = len(self._current_piece[0])
 
     def _move(self, move: int) -> bool:
+        """
+        Try to move the current block.
+        Returns wheather the move is possible.
+        """
         new_pos = self._current_piece_pos[:]
 
         if move == self.MOVE_DOWN:
@@ -413,9 +456,13 @@ class GameTetris:
             return False
 
     def _can_move(self, block: list[list[int]], pos: list[int]) -> bool:
+        """
+        Check if the block can placed in specific position.
+        """
         block_width = len(block[0])
         block_height = len(block)
 
+        # check wheather the block is overlapping with the border
         if pos[0] < 0 or pos[0] + block_width > self.WIDTH:
             return False
         elif pos[1] < 0 or pos[1] + block_height > self.HEIGHT:
@@ -424,6 +471,10 @@ class GameTetris:
             return not self._check_overlapping(block, pos)
 
     def _check_overlapping(self, block: list[list[int]], pos: list[int]) -> bool:
+        """
+        Check if the block on specific position is overlapping with other blocks.
+        """
+
         block_width = len(block[0])
         block_height = len(block)
 
