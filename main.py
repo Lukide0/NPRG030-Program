@@ -1,7 +1,7 @@
 import game
 
 from terminal.colors import *
-from terminal.Term import Term
+from terminal.term import Term
 
 
 if __name__ == "__main__":
