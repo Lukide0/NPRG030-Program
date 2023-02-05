@@ -6,6 +6,7 @@ xref:dev_docs.adoc[Dokumentace pro vývojáře]
 
 == Dependencies
 
+* python >= 3.10
 * pynput
 
 == How to play
